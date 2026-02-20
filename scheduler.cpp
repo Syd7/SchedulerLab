@@ -3,6 +3,9 @@
 #include <string>
 #include <ctype.h>
 #include <vector>
+#include <algorithm>
+#include <queue>
+#include <iomanip>
 
 using namespace std;
 
@@ -30,13 +33,108 @@ struct runningProcess{
 //vector<runningProcess> essentially talks about the timeline that we are expected to output.
 
 //TODO: Implement all of these 
-vector<runningProcess> fcfs(vector<Process> processes);
-vector<runningProcess> rr(vector<Process> processes, int quantum);
-vector<runningProcess> srtf(vector<Process> processes);
-vector<runningProcess> p(vector<Process> processes);
-vector<runningProcess> sjf(vector<Process> processes);
+vector<runningProcess> fcfs(vector<Process> processes){
 
+    //currently works with:
+    //1
+    //2 FCFS
+    //100 10 1
+    //10 70 1
 
+    //and also this:
+    //1
+    //2 FCFS
+    //100 10 1
+    //10 110 1
+
+    vector<runningProcess> timeline;
+    int totalTime = 0;
+    //sort accordingly (arrival Time First -> if equal arrival time, then sort by index)
+    sort(processes.begin(), processes.end(), [](Process &a, Process &b) { //note we use a reference so we dont recopy each process.
+        if (a.arrival == b.arrival) {
+            return a.index < b.index;  // tie-breaker: smaller index comes first
+        } else {
+            return a.arrival < b.arrival;  // earlier arrival comes first
+        }
+    });
+
+    for (int i = 0; i < processes.size(); i++){
+        int pid = processes[i].index;
+        int arrival = processes[i].arrival;
+        int burst = processes[i].burst;
+        if (totalTime < arrival){
+            totalTime = arrival;
+        }
+        runningProcess rp;
+
+        rp.start = totalTime;
+        rp.pid = pid;
+        rp.duration = burst;
+        rp.completed = true;
+
+        processes[i].start_time = totalTime;
+        totalTime = totalTime + rp.duration;
+        //also edit the processor stuff mismo so we can use it for calculation later
+        processes[i].completion_time = totalTime;
+        processes[i].remaining = 0;
+
+        timeline.push_back(rp);
+
+    }
+    return timeline;
+}
+
+//TODO: Methods for each of the rest of the scheduling algorithms
+//vector<runningProcess> rr(vector<Process> processes, int quantum);
+//vector<runningProcess> srtf(vector<Process> processes);
+//vector<runningProcess> p(vector<Process> processes);
+//vector<runningProcess> sjf(vector<Process> processes);
+
+void parseTimeline(vector<runningProcess> &timeline, vector<Process> &processes) {
+    for (int i = 0; i < timeline.size(); i++){
+        if (timeline[i].completed){
+            cout << timeline[i].start << " " <<timeline[i].pid << " " <<timeline[i].duration <<"X";
+        }
+        else{
+            cout << timeline[i].start << " " <<timeline[i].pid << " " <<timeline[i].duration;
+        }
+        cout << "\n";
+    }
+    int n = processes.size();
+    vector<int> waitingTime(n + 1, 0);
+    vector<int> turnaroundTime(n + 1, 0);
+    vector<int> responseTime(n + 1, -1);
+
+    int totalCPUBurst = 0;
+    int totalTimeElapsed = 0;
+    int totalProcessesCompleted = 0;
+    
+    //Motivation: Total Time Elapsed can be calculated by getting the start of the last process ran + the duration it was ran for.
+    totalTimeElapsed = timeline.back().start + timeline.back().duration;
+
+    cout <<"TESTING \n" << "Total Time Elapsed: " << totalTimeElapsed << "ns \n";
+    //total CPU burst calculation and other calculation stuff needed
+    for (int i = 0; i < timeline.size(); i++){
+        totalCPUBurst += timeline[i].duration;
+        if (timeline[i].completed){
+            totalProcessesCompleted += 1;
+        }
+
+    }
+    cout << "Total CPU Burst Time: " << totalCPUBurst << "\n";
+    float cpuUtil = 0;
+    cpuUtil = (float) totalCPUBurst / (float)totalTimeElapsed * 100; //need to cast to float or else we will integer divide the two, ultimately ending up with a zero.
+    cout <<" CPU Utilization: " << cpuUtil <<"%" << "\n";
+    float throughput = 0;
+    throughput = (float) totalProcessesCompleted / (float) totalTimeElapsed;
+    cout << "Throughput: " << throughput << " processes/ns" << "\n";
+
+    //TODO:
+    //1. Waiting Time
+    //2. Turnaround Time
+    //3. Response Time
+
+}
 
 int main()
 {
@@ -65,20 +163,23 @@ int main()
         if (schedulerType == "FCFS") {
             timeline = fcfs(processes);
         }
+        //TODO: Uncomment out each line when done for testing!
         else if (schedulerType == "RR") {
-            timeline = rr(processes, timeQuantum);
+            //timeline = rr(processes, timeQuantum);
         }
         else if (schedulerType == "SRTF") {
-            timeline = srtf(processes);
+            //timeline = srtf(processes);
         }
         else if (schedulerType == "P") {
-            timeline = p(processes);
+            //timeline = p(processes);
         }
         else if (schedulerType == "SJF"){
-            timeline = sjf(processes);
+            //timeline = sjf(processes);
         }
 
-        // TODO: print output here
+        // Compute metrics
+        cout << i + 1 << " " << schedulerType << "\n";
+        parseTimeline(timeline, processes);
     }
     return 0;
 }
