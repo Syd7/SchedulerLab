@@ -22,7 +22,7 @@ struct Process{
 struct runningProcess{
      //we cannot put everything into process such as start, duration, etc as a process can appear multiple times
      // For example, if we work on pid 1 for 25ns and then go around and perform round robin, and we are back to pid 1, it will be hard to keep track of the 
-     //history needed for the output.
+     // history needed for the output.
     int start; // Time elapsed so far in ns
     int pid; // Process ID
     int duration; // CPU Time used in NS
@@ -91,19 +91,19 @@ vector<runningProcess> fcfs(vector<Process> processes){
 //vector<runningProcess> sjf(vector<Process> processes);
 
 void parseTimeline(vector<runningProcess> &timeline, vector<Process> &processes) {
-    for (int i = 0; i < timeline.size(); i++){
-        if (timeline[i].completed){
-            cout << timeline[i].start << " " <<timeline[i].pid << " " <<timeline[i].duration <<"X";
+    for (int i = 0; i < timeline.size(); i++){                                                          //visit every execution slice stored in the timeline vector
+        if (timeline[i].completed){                                                                     //check if the burst was the final one for the that process
+            cout << timeline[i].start << " " <<timeline[i].pid << " " <<timeline[i].duration <<"X";     //start time, process id, duration
         }
         else{
-            cout << timeline[i].start << " " <<timeline[i].pid << " " <<timeline[i].duration;
+            cout << timeline[i].start << " " <<timeline[i].pid << " " <<timeline[i].duration;           //same, but if process has not been completed
         }
         cout << "\n";
     }
-    int n = processes.size();
-    vector<int> waitingTime(n + 1, 0);
-    vector<int> turnaroundTime(n + 1, 0);
-    vector<int> responseTime(n + 1, -1);
+    int n = processes.size();               //get number of unique processes in the timeline 
+    vector<int> waitingTime(n + 1, 0);      //vector = dynamic array, dynamic array of waiting time per processes. n+1 so we can use the index to access the waiting time
+    vector<int> turnaroundTime(n + 1, 0);   //same explanation but turnaround
+    vector<int> responseTime(n + 1, -1);    //same explanation but responsetime
 
     int totalCPUBurst = 0;
     int totalTimeElapsed = 0;
@@ -129,11 +129,42 @@ void parseTimeline(vector<runningProcess> &timeline, vector<Process> &processes)
     throughput = (float) totalProcessesCompleted / (float) totalTimeElapsed;
     cout << "Throughput: " << throughput << " processes/ns" << "\n";
 
-    //TODO:
-    //1. Waiting Time
-    //2. Turnaround Time
-    //3. Response Time
+    //resort the processes by index. allows the correct math to be done regardless of sched algorithm 
+    sort(processes.begin(), processes.end(), [](Process &a, Process &b) {
+        return a.index < b.index;
+    });
 
+        //the equations for these is from the slides. TT = CT - AT; RT = ST - AT
+      for (int i = 0; i < timeline.size(); i++){
+        int pid = timeline[i].pid;
+        int processStartTime = timeline[i].start;
+        int processArrivalTime = processes[pid-1].arrival;
+        int processCompletetionTime = processes[pid-1].completion_time;
+
+        //Response Time
+        if (responseTime[pid] == -1){
+            responseTime[pid] = processStartTime - processArrivalTime;
+        }
+
+        //Turnaround Time
+        if (timeline[i].completed == true){
+            turnaroundTime[pid] = processCompletetionTime - processArrivalTime;
+        }    
+    }
+
+    //Waitingn time 
+    cout << "Waiting times:\n";
+    float sumWaitingTimes = 0;                                              //will be used for calculation of average waiting time
+    
+    for (int j = 0; j < n; j++){                                            //for every j less than the amount of processes
+        int pid = processes[j].index;
+        waitingTime[pid] = turnaroundTime[pid] - processes[j].burst;  
+        sumWaitingTimes += waitingTime[pid];
+        cout << " Process " << pid << ": " << waitingTime[pid] << "ns" << "\n";
+    }
+
+    float averageWaitingTimes = sumWaitingTimes/n;
+    cout << "Average waiting time: " << averageWaitingTimes << "ns" << "\n";
 }
 
 int main()
@@ -153,7 +184,7 @@ int main()
         vector<Process> processes(numProcesses); //We are using a vector because we are dynamically allocating memory.
         //for each process we need to iterate again right to eat it 
         for (int j = 0; j < numProcesses; j++){
-            processes[j].index = j+1;
+            processes[j].index = j+1;                   //very important so pid always starts at 1
             cin >> processes[j].arrival >> processes[j].burst >> processes[j].nice;
             processes[j].remaining = processes[j].burst;
         }
