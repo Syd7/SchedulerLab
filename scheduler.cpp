@@ -33,7 +33,7 @@ struct runningProcess{
 //vector<runningProcess> essentially talks about the timeline that we are expected to output.
 
 //TODO: Implement all of these 
-vector<runningProcess> fcfs(vector<Process> processes){
+vector<runningProcess> fcfs(vector<Process> &processes){
 
     //currently works with:
     //1
