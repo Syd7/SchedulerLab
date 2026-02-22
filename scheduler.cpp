@@ -180,7 +180,9 @@ vector<runningProcess> srtf(vector<Process> &processes) {
 //vector<runningProcess> p(vector<Process> processes);
 //vector<runningProcess> sjf(vector<Process> processes);
 
-void parseTimeline(vector<runningProcess> &timeline, vector<Process> &processes) {
+void parseTimeline(vector<runningProcess> &timeline, vector<Process> &processes, string schedulerType, int testIndex) {
+    cout << testIndex + 1 << " " << schedulerType << "\n";
+
     for (int i = 0; i < timeline.size(); i++){                                                          //visit every execution slice stored in the timeline vector
         if (timeline[i].completed){                                                                     //check if the burst was the final one for the that process
             cout << timeline[i].start << " " <<timeline[i].pid << " " <<timeline[i].duration <<"X";     //start time, process id, duration
@@ -202,7 +204,7 @@ void parseTimeline(vector<runningProcess> &timeline, vector<Process> &processes)
     //Motivation: Total Time Elapsed can be calculated by getting the start of the last process ran + the duration it was ran for.
     totalTimeElapsed = timeline.back().start + timeline.back().duration;
 
-    cout <<"TESTING \n" << "Total Time Elapsed: " << totalTimeElapsed << "ns \n";
+    cout << "Total Time Elapsed: " << totalTimeElapsed << "ns \n";
     //total CPU burst calculation and other calculation stuff needed
     for (int i = 0; i < timeline.size(); i++){
         totalCPUBurst += timeline[i].duration;
@@ -214,7 +216,7 @@ void parseTimeline(vector<runningProcess> &timeline, vector<Process> &processes)
     cout << "Total CPU Burst Time: " << totalCPUBurst << "\n";
     float cpuUtil = 0;
     cpuUtil = (float) totalCPUBurst / (float)totalTimeElapsed * 100; //need to cast to float or else we will integer divide the two, ultimately ending up with a zero.
-    cout <<" CPU Utilization: " << cpuUtil <<"%" << "\n";
+    cout <<"CPU Utilization: " << cpuUtil <<"%" << "\n";
     float throughput = 0;
     throughput = (float) totalProcessesCompleted / (float) totalTimeElapsed;
     cout << "Throughput: " << throughput << " processes/ns" << "\n";
@@ -255,6 +257,29 @@ void parseTimeline(vector<runningProcess> &timeline, vector<Process> &processes)
 
     float averageWaitingTimes = sumWaitingTimes/n;
     cout << "Average waiting time: " << averageWaitingTimes << "ns" << "\n";
+
+    cout <<"Turnaround times:\n";
+    float sumTurnaroundTime = 0;                                              //will be used for calculation of average waiting time
+
+    for (int j = 0; j < n; j++){
+        int pid = processes[j].index;
+        cout << "Process " << pid << ": " <<turnaroundTime[pid] <<"ns" <<"\n";
+        sumTurnaroundTime += turnaroundTime[pid];
+    }
+    float averageTurnaroundTime = sumTurnaroundTime / n;
+    cout << "Average turnaround time: " << averageTurnaroundTime <<"ns" <<"\n";
+
+    cout <<"Response times:\n";
+    float totalResponseTime = 0;
+
+    for (int j = 0; j < n; j++){
+        int pid = processes[j].index;
+        cout << "Process " << pid << ": " <<responseTime[pid] <<"ns" <<"\n";
+        totalResponseTime += responseTime[pid];
+    }
+    float averageResponseTime = totalResponseTime / n;
+    cout << "Average response time: " << averageResponseTime <<"ns" <<"\n";
+
 }
 
 int main()
@@ -263,6 +288,7 @@ int main()
     cin >> numTestCases;
     vector<vector<runningProcess>> allTimelines; // each element is a timeline for one test case
     vector<vector<Process>> allProcesses;
+    vector<string> schedulerTypeTimeline;
     for (int i = 0; i < numTestCases; i++){
         int numProcesses;
         string schedulerType;
@@ -282,7 +308,6 @@ int main()
         }
 
         vector<runningProcess> timeline;
-
         if (schedulerType == "FCFS") {
             timeline = fcfs(processes);
         }
@@ -301,12 +326,12 @@ int main()
         }
 
         // Compute metrics
-        cout << i + 1 << " " << schedulerType << "\n";
         allTimelines.push_back(timeline);
         allProcesses.push_back(processes);
+        schedulerTypeTimeline.push_back(schedulerType);
     }
     for (int i = 0; i < allTimelines.size(); i++){
-        parseTimeline(allTimelines[i], allProcesses[i]);
+        parseTimeline(allTimelines[i], allProcesses[i], schedulerTypeTimeline[i], i);
     }
     return 0;
 }
