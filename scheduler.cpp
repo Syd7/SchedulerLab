@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <queue>
 #include <iomanip>
+#include <climits>
 
 using namespace std;
 
@@ -33,6 +34,14 @@ struct runningProcess{
 //vector<runningProcess> essentially talks about the timeline that we are expected to output.
 
 //TODO: Implement all of these 
+bool allDone(const vector<Process>& p) {
+    for (int i = 0; i < p.size(); i++){
+        if (p[i].remaining > 0) {
+            return false;
+        }
+    }
+    return true;
+}
 vector<runningProcess> fcfs(vector<Process> &processes){
 
     //currently works with:
@@ -86,7 +95,88 @@ vector<runningProcess> fcfs(vector<Process> &processes){
 
 //TODO: Methods for each of the rest of the scheduling algorithms
 //vector<runningProcess> rr(vector<Process> processes, int quantum);
-//vector<runningProcess> srtf(vector<Process> processes);
+
+
+vector<runningProcess> srtf(vector<Process> &processes) {
+    vector<runningProcess> timeline;
+    int currentTime = 0;
+
+    //im not sure if sort is entirely necessary
+    sort(processes.begin(), processes.end(), [](Process &a, Process &b) {
+        if (a.arrival == b.arrival)
+            return a.index < b.index;
+        return a.arrival < b.arrival;
+    });
+    while (!allDone(processes)) {
+        int shortestProcessIndex = -1;
+        int shortestProcessTime = INT_MAX;
+
+        for (int i = 0; i < processes.size(); i++) {
+            // Only consider processes that have arrived and are not finished
+            if (processes[i].arrival <= currentTime && processes[i].remaining > 0) {
+                if (processes[i].remaining < shortestProcessTime) {
+                    // New shortest found
+                    shortestProcessTime = processes[i].remaining;
+                    shortestProcessIndex = i;
+                }
+                else if (processes[i].remaining == shortestProcessTime) {
+                    // Tie: choose earlier arrival
+                    if (processes[i].arrival < processes[shortestProcessIndex].arrival) {
+                        shortestProcessIndex = i;
+                    }
+                    // If arrival is also the same, choose lower index
+                    else if (processes[i].arrival == processes[shortestProcessIndex].arrival &&
+                            processes[i].index < processes[shortestProcessIndex].index) {
+                        shortestProcessIndex = i;
+                    }
+                }
+            }
+}
+
+        // If no processes can be used, increment current time. No need to repeat the rest of the code below
+        if (shortestProcessIndex == -1) {
+            currentTime += 1;
+            continue;
+        }
+
+        // Determine next arrival that might preempt
+        int runTime = processes[shortestProcessIndex].remaining; //check remaining
+        for (int i = 0; i < processes.size(); i++) {
+            if (processes[i].remaining > 0 && processes[i].arrival > currentTime) {
+                int timeUntilArrival = processes[i].arrival - currentTime; //how much time until next process arrives
+                if (timeUntilArrival < runTime && processes[i].remaining < processes[shortestProcessIndex].remaining - timeUntilArrival) {
+                    runTime = timeUntilArrival; // essentially, we just want to limit the amount of time the process will run so we dont accidentally run it for too long
+                    // if a next process is coming, then we have to preempt accordingly
+                }
+            }
+        }
+
+        // Set start_time if first time running
+        if (processes[shortestProcessIndex].start_time == -1)
+            processes[shortestProcessIndex].start_time = currentTime;
+
+        
+        //populate timeline with rp
+        runningProcess rp;
+        rp.start = currentTime;
+        rp.pid = processes[shortestProcessIndex].index;
+        rp.duration = runTime;
+
+        processes[shortestProcessIndex].remaining -= runTime; // subtract remaining by the amount of time process was run for
+        currentTime += runTime; // move time forward.
+
+        if (processes[shortestProcessIndex].remaining == 0) { //check for completion
+            processes[shortestProcessIndex].completion_time = currentTime; //set completion time to current time
+            rp.completed = true; // mark completed
+        } else {
+            rp.completed = false;
+        }
+
+        timeline.push_back(rp); // push rp to timeine
+    }
+
+    return timeline;
+}
 //vector<runningProcess> p(vector<Process> processes);
 //vector<runningProcess> sjf(vector<Process> processes);
 
@@ -171,6 +261,8 @@ int main()
 {
     int numTestCases;
     cin >> numTestCases;
+    vector<vector<runningProcess>> allTimelines; // each element is a timeline for one test case
+    vector<vector<Process>> allProcesses;
     for (int i = 0; i < numTestCases; i++){
         int numProcesses;
         string schedulerType;
@@ -199,7 +291,7 @@ int main()
             //timeline = rr(processes, timeQuantum);
         }
         else if (schedulerType == "SRTF") {
-            //timeline = srtf(processes);
+            timeline = srtf(processes);
         }
         else if (schedulerType == "P") {
             //timeline = p(processes);
@@ -210,7 +302,11 @@ int main()
 
         // Compute metrics
         cout << i + 1 << " " << schedulerType << "\n";
-        parseTimeline(timeline, processes);
+        allTimelines.push_back(timeline);
+        allProcesses.push_back(processes);
+    }
+    for (int i = 0; i < allTimelines.size(); i++){
+        parseTimeline(allTimelines[i], allProcesses[i]);
     }
     return 0;
 }
