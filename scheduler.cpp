@@ -221,7 +221,7 @@ vector<runningProcess> rr(vector<Process> &processes, int quantum){
         }
 
             //populate timeline with rp
-            int runTime = min(processes[currentIndex].remaining, quantum);
+            int runTime = min(processes[currentIndex].remaining, remainingQuantum);
             runningProcess rp;
             rp.start = currentTime;
             rp.pid = processes[currentIndex].index;
