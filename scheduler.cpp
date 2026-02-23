@@ -170,7 +170,6 @@ vector<runningProcess> rr(vector<Process> &processes, int quantum){
     });
 
     queue<int> readyQueue;                   //queue was used so we can push and pop elements
-    vector<bool> hasEnteredQueue(n, false);  //checks whether or not a process as entered the queue
     int nextArrivalIndex = 0;                // index of the process that arrives next
 
     while (completed < n){
@@ -178,7 +177,6 @@ vector<runningProcess> rr(vector<Process> &processes, int quantum){
         //adds processes to the ready queue based on arrival time
         while(nextArrivalIndex < n && processes[nextArrivalIndex].arrival <= currentTime){ //while the index of the next process is less than the process size, and that process's arrival time is earlier than the current time
             readyQueue.push(nextArrivalIndex);          //push the process's index onto the queue
-            hasEnteredQueue[nextArrivalIndex] = true;   //set the index of the process to true 
             nextArrivalIndex++;
         }
 
@@ -215,7 +213,6 @@ vector<runningProcess> rr(vector<Process> &processes, int quantum){
             //check if any processes arrived while running
             while (nextArrivalIndex < n && processes[nextArrivalIndex].arrival <= currentTime) {
                 readyQueue.push(nextArrivalIndex);
-                hasEnteredQueue[nextArrivalIndex] = true;
                 nextArrivalIndex++;
             }
 
