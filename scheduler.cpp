@@ -167,6 +167,7 @@ vector<runningProcess> rr(vector<Process> &processes, int quantum) {
         return a.index < b.index;
     });
 
+    
     queue<int> fresh; // newly arrived processes
     queue<int> used;  // preempted processes
 
