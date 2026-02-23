@@ -160,7 +160,7 @@ vector<runningProcess> rr(vector<Process> &processes, int quantum) {
     int currentTime = 0;
     int nextArrivalIndex = 0; // index for new arrivals
 
-    // Sort processes by arrival time, then index
+    //sort processes by arrival time, then index
     sort(processes.begin(), processes.end(), [](Process &a, Process &b) { //note we use a reference so we dont recopy each process.
         if (a.arrival == b.arrival) {
             return a.index < b.index;  // tie-breaker: smaller index comes first
@@ -175,13 +175,13 @@ vector<runningProcess> rr(vector<Process> &processes, int quantum) {
 
     //while the number of completed processes is less than the total processes
     while(!AllProcessesDoneStatus(processes)) {
-        // Push newly arrived processes into fresh queue
+        // push newly arrived processes into fresh queue
         while(nextArrivalIndex < n && processes[nextArrivalIndex].arrival <= currentTime) {     // while the current index is less than the total proccesses, and the arrival time is on or before the current time
             fresh.push(nextArrivalIndex); //push the index of that process onto the fresh queue
             nextArrivalIndex++;     // increment
         }
 
-        //  idle handling for cpu
+        // idle handling for cpu
         if(fresh.empty() && used.empty()) {
             currentTime = processes[nextArrivalIndex].arrival; //skips to the next processes arrival time instead of incrementing every time the queue is empty
             continue;
@@ -199,7 +199,7 @@ vector<runningProcess> rr(vector<Process> &processes, int quantum) {
 
         Process &p = processes[processIndex];
 
-        // Set start time if first run
+        // set start time if first run
         if(p.start_time == -1){
             p.start_time = currentTime;
         } 
