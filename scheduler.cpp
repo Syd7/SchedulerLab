@@ -154,92 +154,86 @@ vector<runningProcess> srtf(vector<Process> &processes) {
 
     return timeline;
 }
-vector<runningProcess> rr(vector<Process> &processes, int quantum){
-     vector<runningProcess> timeline;
-     int currentTime = 0;
-     int completed = 0;
-     int n = processes.size();
+vector<runningProcess> rr(vector<Process> &processes, int quantum) {
+    vector<runningProcess> timeline;
+    int n = processes.size();
+    int completed = 0;
+    int currentTime = 0;
+    int idx = 0; // index for new arrivals
 
-     //sort by arrival time. 
-     sort(processes.begin(), processes.end(), [](Process &a, Process &b) { //note we use a reference so we dont recopy each process.
-        if (a.arrival == b.arrival) {
-            return a.index < b.index;  // tie-breaker: smaller index comes first
-        } else {
-            return a.arrival < b.arrival;  // earlier arrival comes first
-        }
+    // Sort processes by arrival time, then index
+    sort(processes.begin(), processes.end(), [](Process &a, Process &b){
+        if(a.arrival != b.arrival) return a.arrival < b.arrival;
+        return a.index < b.index;
     });
 
-    queue<int> readyQueue;                   //queue was used so we can push and pop elements
-    vector<bool> hasEnteredQueue(n, false);  //checks whether or not a process as entered the queue
-    int nextArrivalIndex = 0;                // index of the process that arrives next
+    queue<int> fresh; // newly arrived processes
+    queue<int> used;  // preempted processes
 
-    while (completed < n){
-
-        //adds processes to the ready queue based on arrival time
-        while(nextArrivalIndex < n && processes[nextArrivalIndex].arrival <= currentTime){ //while the index of the next process is less than the process size, and that process's arrival time is earlier than the current time
-            readyQueue.push(nextArrivalIndex);          //push the process's index onto the queue
-            hasEnteredQueue[nextArrivalIndex] = true;   //set the index of the process to true 
-            nextArrivalIndex++;
+    while(completed < n) {
+        // Push newly arrived processes into fresh queue
+        while(idx < n && processes[idx].arrival <= currentTime) {
+            fresh.push(idx);
+            idx++;
         }
 
-        //skips the time to the first process
-        while(readyQueue.empty()){
-            currentTime = processes[nextArrivalIndex].arrival;
+        // CPU idle handling
+        if(fresh.empty() && used.empty()) {
+            currentTime = processes[idx].arrival;
             continue;
         }
 
-        int remainingQuantum = quantum;
-         //if we have time left, and the queue isnt empty,
-        while (remainingQuantum > 0 && !readyQueue.empty()){
-
-            //get the first process's index in the ready queue, we then pop it
-            int currentIndex = readyQueue.front();
-            readyQueue.pop();
-
-            //sets when the process is started
-            if (processes[currentIndex].start_time == -1) {
-            processes[currentIndex].start_time = currentTime;
+        // Pick next process: fresh first
+        int pIdx;
+        if(!fresh.empty()) {
+            pIdx = fresh.front(); fresh.pop();
+        } else {
+            pIdx = used.front(); used.pop();
         }
 
-            //populate timeline with rp
-            int runTime = min(processes[currentIndex].remaining, quantum);
-            runningProcess rp;
-            rp.start = currentTime;
-            rp.pid = processes[currentIndex].index;
-            rp.duration = runTime;
+        Process &p = processes[pIdx];
 
-            processes[currentIndex].remaining -= runTime; // subtract remaining by the amount of time process was run for
-            currentTime += runTime; // move time forward.
-            remainingQuantum -=runTime;
+        // Set start time if first run
+        if(p.start_time == -1) p.start_time = currentTime;
 
-            //check if any processes arrived while running
-            while (nextArrivalIndex < n && processes[nextArrivalIndex].arrival <= currentTime) {
-                readyQueue.push(nextArrivalIndex);
-                hasEnteredQueue[nextArrivalIndex] = true;
-                nextArrivalIndex++;
-            }
+        int runTime = min(quantum, p.remaining);
+        p.remaining -= runTime;
 
-            //if a process is done, mark it as complete
-            if (processes[currentIndex].remaining == 0) {
-                processes[currentIndex].completion_time = currentTime;
-                rp.completed = true;
-                completed++;
-            } 
-            //if its not repush it to the stack so it may be used again
-            else {
-                rp.completed = false;
-                readyQueue.push(currentIndex);
-            }
+        runningProcess rp;
+        rp.start = currentTime;
+        rp.pid = p.index;
+        rp.duration = runTime;
+        rp.completed = false;
 
-            timeline.push_back(rp);
+        currentTime += runTime;
 
+        bool finished = (p.remaining == 0);
+        if(finished) {
+            rp.completed = true;
+            p.completion_time = currentTime;
+            completed++;
         }
-  
-          
+
+        timeline.push_back(rp);
+
+        // Push any newly arrived processes during this slice to fresh
+        while(idx < n && processes[idx].arrival <= currentTime) {
+            fresh.push(idx);
+            idx++;
+        }
+
+        // If not finished, put process at back of used queue
+        if(!finished) used.push(pIdx);
     }
-    return timeline;
 
+    // Sort back by process index for correct metrics calculation
+    sort(processes.begin(), processes.end(), [](Process &a, Process &b){
+        return a.index < b.index;
+    });
+
+    return timeline;
 }
+        
 vector<runningProcess> p(vector<Process> &processes){
     vector<runningProcess> timeline;
     int currentTime = 0;
