@@ -33,7 +33,6 @@ struct runningProcess{
 //intuition: put scheduling logic of each into its own method to allow for more modular writing and easier testing.
 //vector<runningProcess> essentially talks about the timeline that we are expected to output.
 
-//TODO: Implement all of these 
 bool AllProcessesDoneStatus(vector<Process>& p) {
     for (int i = 0; i < p.size(); i++){
         if (p[i].remaining > 0) {
@@ -401,7 +400,7 @@ void parseTimeline(vector<runningProcess> &timeline, vector<Process> &processes,
     cout << "Total CPU Burst Time: " << totalCPUBurst << "ns \n";
     float cpuUtil = 0;
     cpuUtil = (float) totalCPUBurst / (float)totalTimeElapsed * 100; //need to cast to float or else we will integer divide the two, ultimately ending up with a zero.
-    cout <<"CPU Utilization: " << cpuUtil <<"% \n";
+    cout <<"CPU Utilization: " << (int) cpuUtil <<"% \n";
     float throughput = 0;
     throughput = (float) totalProcessesCompleted / (float) totalTimeElapsed;
     cout << "Throughput: " << throughput << " processes/ns" << "\n";
