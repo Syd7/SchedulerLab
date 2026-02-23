@@ -34,7 +34,7 @@ struct runningProcess{
 //vector<runningProcess> essentially talks about the timeline that we are expected to output.
 
 //TODO: Implement all of these 
-bool allDone(const vector<Process>& p) {
+bool AllProcessesDoneStatus(vector<Process>& p) {
     for (int i = 0; i < p.size(); i++){
         if (p[i].remaining > 0) {
             return false;
@@ -43,18 +43,6 @@ bool allDone(const vector<Process>& p) {
     return true;
 }
 vector<runningProcess> fcfs(vector<Process> &processes){
-
-    //currently works with:
-    //1
-    //2 FCFS
-    //100 10 1
-    //10 70 1
-
-    //and also this:
-    //1
-    //2 FCFS
-    //100 10 1
-    //10 110 1
 
     vector<runningProcess> timeline;
     int totalTime = 0;
@@ -96,14 +84,7 @@ vector<runningProcess> fcfs(vector<Process> &processes){
 vector<runningProcess> srtf(vector<Process> &processes) {
     vector<runningProcess> timeline;
     int currentTime = 0;
-
-    //im not sure if sort is entirely necessary
-    sort(processes.begin(), processes.end(), [](Process &a, Process &b) {
-        if (a.arrival == b.arrival)
-            return a.index < b.index;
-        return a.arrival < b.arrival;
-    });
-    while (!allDone(processes)) {
+    while (!AllProcessesDoneStatus(processes)) {
         int shortestProcessIndex = -1;
         int shortestProcessTime = INT_MAX;
 
@@ -116,13 +97,12 @@ vector<runningProcess> srtf(vector<Process> &processes) {
                     shortestProcessIndex = i;
                 }
                 else if (processes[i].remaining == shortestProcessTime) {
-                    // Tie: choose earlier arrival
+                    // If there is a tie, choose the earlier arrival
                     if (processes[i].arrival < processes[shortestProcessIndex].arrival) {
                         shortestProcessIndex = i;
                     }
                     // If arrival is also the same, choose lower index
-                    else if (processes[i].arrival == processes[shortestProcessIndex].arrival &&
-                            processes[i].index < processes[shortestProcessIndex].index) {
+                    else if (processes[i].arrival == processes[shortestProcessIndex].arrival && processes[i].index < processes[shortestProcessIndex].index) {
                         shortestProcessIndex = i;
                     }
                 }
@@ -140,7 +120,8 @@ vector<runningProcess> srtf(vector<Process> &processes) {
         for (int i = 0; i < processes.size(); i++) {
             if (processes[i].remaining > 0 && processes[i].arrival > currentTime) {
                 int timeUntilArrival = processes[i].arrival - currentTime; //how much time until next process arrives
-                if (timeUntilArrival < runTime && processes[i].remaining < processes[shortestProcessIndex].remaining - timeUntilArrival) {
+                int remainingAtArrival = processes[shortestProcessIndex].remaining - timeUntilArrival;
+                if (timeUntilArrival < runTime && processes[i].remaining < remainingAtArrival) {
                     runTime = timeUntilArrival; // essentially, we just want to limit the amount of time the process will run so we dont accidentally run it for too long
                     // if a next process is coming, then we have to preempt accordingly
                 }
@@ -238,7 +219,7 @@ vector<runningProcess> rr(vector<Process> &processes, int quantum){
                 nextArrivalIndex++;
             }
 
-            //if a process is donne, mark it as complete
+            //if a process is done, mark it as complete
             if (processes[currentIndex].remaining == 0) {
                 processes[currentIndex].completion_time = currentTime;
                 rp.completed = true;
@@ -259,7 +240,66 @@ vector<runningProcess> rr(vector<Process> &processes, int quantum){
     return timeline;
 
 }
-//vector<runningProcess> p(vector<Process> processes);
+vector<runningProcess> p(vector<Process> &processes){
+    vector<runningProcess> timeline;
+    int currentTime = 0;
+    while (!AllProcessesDoneStatus(processes)) {
+        int mostPriorityIndex = -1;
+        int mostPriorityNiceness = 21;
+        for (int i = 0; i < processes.size(); i ++){
+            if (processes[i].arrival <= currentTime && processes[i].remaining > 0) {
+                if (processes[i].nice < mostPriorityNiceness){
+                    //new most priority 
+                    mostPriorityNiceness = processes[i].nice;
+                    mostPriorityIndex = i;
+                }
+                else if (processes[i].nice == mostPriorityNiceness){
+                    //choose the earlier arrival time.
+                    if (processes[i].arrival < processes[mostPriorityIndex].arrival){
+                        mostPriorityIndex = i;;
+                    }
+                    else if (processes[i].arrival == processes[mostPriorityIndex].arrival && processes[i].index < processes[mostPriorityIndex].index){
+                        mostPriorityIndex = i;
+                    } 
+                }
+            }
+        }
+        if (mostPriorityIndex == -1) {
+            currentTime += 1; // if we dont find a viable index then just increment current time.
+            continue;
+        }
+        int runTime = processes[mostPriorityIndex].remaining;
+        for (int i = 0; i < processes.size(); i++){
+            if (processes[i].remaining > 0 && processes[i].arrival > currentTime){
+                int timeUntilArrival = processes[i].arrival - currentTime;
+                if (timeUntilArrival < runTime && processes[i].nice < processes[mostPriorityIndex].nice){
+                    runTime = timeUntilArrival;
+                }
+            }
+        }
+        if (processes[mostPriorityIndex].start_time == -1)
+            processes[mostPriorityIndex].start_time = currentTime;
+        runningProcess rp;
+        rp.start = currentTime;
+        rp.pid = processes[mostPriorityIndex].index;
+        rp.duration = runTime;
+
+        processes[mostPriorityIndex].remaining -= runTime; // subtract remaining by the amount of time process was run for
+        currentTime += runTime; // move time forward.
+
+        if (processes[mostPriorityIndex].remaining == 0) { //check for completion
+            processes[mostPriorityIndex].completion_time = currentTime; //set completion time to current time
+            rp.completed = true; // mark completed
+        } else {
+            rp.completed = false;
+        }
+
+        timeline.push_back(rp); // push rp to timeine
+    }
+
+    return timeline;
+
+}
 vector<runningProcess> sjf(vector<Process> &processes){
     
     vector<runningProcess> timeline;
@@ -275,7 +315,7 @@ vector<runningProcess> sjf(vector<Process> &processes){
         }
     });
 
-    while (!allDone(processes)){
+    while (!AllProcessesDoneStatus(processes)){
 
         int shortestJobIndex = -1;
         int shortestBurst = INT_MAX;
@@ -355,10 +395,10 @@ void parseTimeline(vector<runningProcess> &timeline, vector<Process> &processes,
         }
 
     }
-    cout << "Total CPU Burst Time: " << totalCPUBurst << "\n";
+    cout << "Total CPU Burst Time: " << totalCPUBurst << "ns \n";
     float cpuUtil = 0;
     cpuUtil = (float) totalCPUBurst / (float)totalTimeElapsed * 100; //need to cast to float or else we will integer divide the two, ultimately ending up with a zero.
-    cout <<"CPU Utilization: " << cpuUtil <<"%" << "\n";
+    cout <<"CPU Utilization: " << cpuUtil <<"% \n";
     float throughput = 0;
     throughput = (float) totalProcessesCompleted / (float) totalTimeElapsed;
     cout << "Throughput: " << throughput << " processes/ns" << "\n";
@@ -405,7 +445,7 @@ void parseTimeline(vector<runningProcess> &timeline, vector<Process> &processes,
 
     for (int j = 0; j < n; j++){
         int pid = processes[j].index;
-        cout << "Process " << pid << ": " <<turnaroundTime[pid] <<"ns" <<"\n";
+        cout << " Process " << pid << ": " <<turnaroundTime[pid] <<"ns" <<"\n";
         sumTurnaroundTime += turnaroundTime[pid];
     }
     float averageTurnaroundTime = sumTurnaroundTime / n;
@@ -416,7 +456,7 @@ void parseTimeline(vector<runningProcess> &timeline, vector<Process> &processes,
 
     for (int j = 0; j < n; j++){
         int pid = processes[j].index;
-        cout << "Process " << pid << ": " <<responseTime[pid] <<"ns" <<"\n";
+        cout << " Process " << pid << ": " <<responseTime[pid] <<"ns" <<"\n";
         totalResponseTime += responseTime[pid];
     }
     float averageResponseTime = totalResponseTime / n;
@@ -461,7 +501,7 @@ int main()
             timeline = srtf(processes);
         }
         else if (schedulerType == "P") {
-            //timeline = p(processes);
+            timeline = p(processes);
         }
         else if (schedulerType == "SJF"){
             timeline = sjf(processes);
