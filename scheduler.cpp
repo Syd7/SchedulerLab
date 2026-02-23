@@ -169,14 +169,14 @@ vector<runningProcess> rr(vector<Process> &processes, int quantum){
         }
     });
 
-    queue<int> readyQueue;                   //queue was used so we can push and pop elements
+    deque<int> readyQueue;                   //queue was used so we can push and pop elements
     int nextArrivalIndex = 0;                // index of the process that arrives next
 
     while (completed < n){
 
         //adds processes to the ready queue based on arrival time
         while(nextArrivalIndex < n && processes[nextArrivalIndex].arrival <= currentTime){ //while the index of the next process is less than the process size, and that process's arrival time is earlier than the current time
-            readyQueue.push(nextArrivalIndex);          //push the process's index onto the queue
+            readyQueue.push_back(nextArrivalIndex);          //push the process's index onto the queue
             nextArrivalIndex++;
         }
 
@@ -192,7 +192,7 @@ vector<runningProcess> rr(vector<Process> &processes, int quantum){
 
             //get the first process's index in the ready queue, we then pop it
             int currentIndex = readyQueue.front();
-            readyQueue.pop();
+            readyQueue.pop_front();
 
             //sets when the process is started
             if (processes[currentIndex].start_time == -1) {
@@ -212,7 +212,7 @@ vector<runningProcess> rr(vector<Process> &processes, int quantum){
 
             //check if any processes arrived while running
             while (nextArrivalIndex < n && processes[nextArrivalIndex].arrival <= currentTime) {
-                readyQueue.push(nextArrivalIndex);
+                readyQueue.push_front(nextArrivalIndex);
                 nextArrivalIndex++;
             }
 
@@ -225,14 +225,11 @@ vector<runningProcess> rr(vector<Process> &processes, int quantum){
             //if its not repush it to the stack so it may be used again
             else {
                 rp.completed = false;
-                readyQueue.push(currentIndex);
+                readyQueue.push_back(currentIndex);
             }
 
             timeline.push_back(rp);
-
-        }
-  
-          
+        } 
     }
     return timeline;
 
