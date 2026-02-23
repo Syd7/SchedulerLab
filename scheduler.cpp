@@ -34,7 +34,7 @@ struct runningProcess{
 //vector<runningProcess> essentially talks about the timeline that we are expected to output.
 
 //TODO: Implement all of these 
-bool allDone(const vector<Process>& p) {
+bool allDone(vector<Process>& p) {
     for (int i = 0; i < p.size(); i++){
         if (p[i].remaining > 0) {
             return false;
@@ -96,13 +96,6 @@ vector<runningProcess> fcfs(vector<Process> &processes){
 vector<runningProcess> srtf(vector<Process> &processes) {
     vector<runningProcess> timeline;
     int currentTime = 0;
-
-    //im not sure if sort is entirely necessary
-    sort(processes.begin(), processes.end(), [](Process &a, Process &b) {
-        if (a.arrival == b.arrival)
-            return a.index < b.index;
-        return a.arrival < b.arrival;
-    });
     while (!allDone(processes)) {
         int shortestProcessIndex = -1;
         int shortestProcessTime = INT_MAX;
