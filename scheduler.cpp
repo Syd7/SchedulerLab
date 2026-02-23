@@ -167,7 +167,7 @@ vector<runningProcess> rr(vector<Process> &processes, int quantum) {
         return a.index < b.index;
     });
 
-    
+
     queue<int> fresh; // newly arrived processes
     queue<int> used;  // preempted processes
 
@@ -217,7 +217,7 @@ vector<runningProcess> rr(vector<Process> &processes, int quantum) {
 
         //if the remaining time is finished, set finished to true, which is uused in the next block
         if (p.remaining == 0){
-            bool finished = true;
+            finished = true;
         }
       
         //if the process is finished, we mark the process as complete and edit its variables
