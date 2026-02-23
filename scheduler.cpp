@@ -172,7 +172,7 @@ vector<runningProcess> rr(vector<Process> &processes, int quantum) {
     queue<int> used;  // preempted processes
 
     //while the number of completed processes is less than the total processes
-    while(completed < n) {
+    while(!AllProcessesDoneStatus(processes)) {
         // Push newly arrived processes into fresh queue
         while(nextArrivalIndex < n && processes[nextArrivalIndex].arrival <= currentTime) {     // while the current index is less than the total proccesses, and the arrival time is on or before the current time
             fresh.push(nextArrivalIndex); //push the index of that process onto the fresh queue
@@ -224,7 +224,6 @@ vector<runningProcess> rr(vector<Process> &processes, int quantum) {
         if(finished) {
             rp.completed = true;
             p.completion_time = currentTime;
-            completed++;
         }
 
         timeline.push_back(rp);
