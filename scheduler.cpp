@@ -161,9 +161,12 @@ vector<runningProcess> rr(vector<Process> &processes, int quantum) {
     int nextArrivalIndex = 0; // index for new arrivals
 
     // Sort processes by arrival time, then index
-    sort(processes.begin(), processes.end(), [](Process &a, Process &b){
-        if(a.arrival != b.arrival) return a.arrival < b.arrival;
-        return a.index < b.index;
+    sort(processes.begin(), processes.end(), [](Process &a, Process &b) { //note we use a reference so we dont recopy each process.
+        if (a.arrival == b.arrival) {
+            return a.index < b.index;  // tie-breaker: smaller index comes first
+        } else {
+            return a.arrival < b.arrival;  // earlier arrival comes first
+        }
     });
 
 
