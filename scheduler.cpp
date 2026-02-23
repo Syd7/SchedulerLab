@@ -34,7 +34,7 @@ struct runningProcess{
 //vector<runningProcess> essentially talks about the timeline that we are expected to output.
 
 //TODO: Implement all of these 
-bool allDone(vector<Process>& p) {
+bool AllProcessesDoneStatus(vector<Process>& p) {
     for (int i = 0; i < p.size(); i++){
         if (p[i].remaining > 0) {
             return false;
@@ -43,18 +43,6 @@ bool allDone(vector<Process>& p) {
     return true;
 }
 vector<runningProcess> fcfs(vector<Process> &processes){
-
-    //currently works with:
-    //1
-    //2 FCFS
-    //100 10 1
-    //10 70 1
-
-    //and also this:
-    //1
-    //2 FCFS
-    //100 10 1
-    //10 110 1
 
     vector<runningProcess> timeline;
     int totalTime = 0;
@@ -96,7 +84,7 @@ vector<runningProcess> fcfs(vector<Process> &processes){
 vector<runningProcess> srtf(vector<Process> &processes) {
     vector<runningProcess> timeline;
     int currentTime = 0;
-    while (!allDone(processes)) {
+    while (!AllProcessesDoneStatus(processes)) {
         int shortestProcessIndex = -1;
         int shortestProcessTime = INT_MAX;
 
@@ -109,13 +97,12 @@ vector<runningProcess> srtf(vector<Process> &processes) {
                     shortestProcessIndex = i;
                 }
                 else if (processes[i].remaining == shortestProcessTime) {
-                    // Tie: choose earlier arrival
+                    // If there is a tie, choose the earlier arrival
                     if (processes[i].arrival < processes[shortestProcessIndex].arrival) {
                         shortestProcessIndex = i;
                     }
                     // If arrival is also the same, choose lower index
-                    else if (processes[i].arrival == processes[shortestProcessIndex].arrival &&
-                            processes[i].index < processes[shortestProcessIndex].index) {
+                    else if (processes[i].arrival == processes[shortestProcessIndex].arrival && processes[i].index < processes[shortestProcessIndex].index) {
                         shortestProcessIndex = i;
                     }
                 }
@@ -133,7 +120,8 @@ vector<runningProcess> srtf(vector<Process> &processes) {
         for (int i = 0; i < processes.size(); i++) {
             if (processes[i].remaining > 0 && processes[i].arrival > currentTime) {
                 int timeUntilArrival = processes[i].arrival - currentTime; //how much time until next process arrives
-                if (timeUntilArrival < runTime && processes[i].remaining < processes[shortestProcessIndex].remaining - timeUntilArrival) {
+                int remainingAtArrival = processes[shortestProcessIndex].remaining - timeUntilArrival;
+                if (timeUntilArrival < runTime && processes[i].remaining < remainingAtArrival) {
                     runTime = timeUntilArrival; // essentially, we just want to limit the amount of time the process will run so we dont accidentally run it for too long
                     // if a next process is coming, then we have to preempt accordingly
                 }
@@ -231,7 +219,7 @@ vector<runningProcess> rr(vector<Process> &processes, int quantum){
                 nextArrivalIndex++;
             }
 
-            //if a process is donne, mark it as complete
+            //if a process is done, mark it as complete
             if (processes[currentIndex].remaining == 0) {
                 processes[currentIndex].completion_time = currentTime;
                 rp.completed = true;
@@ -255,7 +243,7 @@ vector<runningProcess> rr(vector<Process> &processes, int quantum){
 vector<runningProcess> p(vector<Process> &processes){
     vector<runningProcess> timeline;
     int currentTime = 0;
-    while (!allDone(processes)) {
+    while (!AllProcessesDoneStatus(processes)) {
         int mostPriorityIndex = -1;
         int mostPriorityNiceness = 21;
         for (int i = 0; i < processes.size(); i ++){
@@ -327,7 +315,7 @@ vector<runningProcess> sjf(vector<Process> &processes){
         }
     });
 
-    while (!allDone(processes)){
+    while (!AllProcessesDoneStatus(processes)){
 
         int shortestJobIndex = -1;
         int shortestBurst = INT_MAX;
